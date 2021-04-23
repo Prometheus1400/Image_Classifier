@@ -10,7 +10,7 @@ transform = transforms.Compose(
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
 batch_size = 4
-trainset = torchvision.datasets.CIFAR10(root='./data',
+trainset = torchvision.datasets.CIFAR10(root='/data3/kaleb.dickerson2001/CIFAR_Data',
                                         train=True,
                                         download=True,
                                         transform=transform)
@@ -19,7 +19,7 @@ trainloader = torch.utils.data.DataLoader(trainset,
                                           shuffle=True,
                                           num_workers=0)
 
-testset = torchvision.datasets.CIFAR10(root='./data',
+testset = torchvision.datasets.CIFAR10(root='/data3/kaleb.dickerson2001/CIFAR_Data',
                                        train=False,
                                        download=True,
                                        transform=transform)
