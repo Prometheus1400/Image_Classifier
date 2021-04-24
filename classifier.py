@@ -5,12 +5,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+if torch.cuda.is_available():
+    dev = "cuda:0"
+else:
+    dev = "cpu"
+
+device = torch.device(dev)
+
 transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
 batch_size = 4
-trainset = torchvision.datasets.CIFAR10(root='./data',
+trainset = torchvision.datasets.CIFAR10(root='/data3/kaleb.dickerson2001/CIFAR_Data',
                                         train=True,
                                         download=True,
                                         transform=transform)
@@ -19,7 +26,7 @@ trainloader = torch.utils.data.DataLoader(trainset,
                                           shuffle=True,
                                           num_workers=0)
 
-testset = torchvision.datasets.CIFAR10(root='./data',
+testset = torchvision.datasets.CIFAR10(root='/data3/kaleb.dickerson2001/CIFAR_Data',
                                        train=False,
                                        download=True,
                                        transform=transform)
@@ -53,17 +60,18 @@ class Net(nn.Module):
 
 
 net = Net()
+net.to(device)
 net.load_state_dict(torch.load("./cifar_net.pth"))
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-for epoch in range(2):  # loop over the dataset multiple times
+for epoch in range(1):  # loop over the dataset multiple times
 
     running_loss = 0.0
     for i, data in enumerate(trainloader, 0):
         # get the inputs; data is a list of [inputs, labels]
-        inputs, labels = data
+        inputs, labels = data[0].to(device), data[1].to(device)
 
         # zero the parameter gradients
         optimizer.zero_grad()
@@ -80,8 +88,8 @@ for epoch in range(2):  # loop over the dataset multiple times
             print('[%d, %5d] loss: %.3f' %
                   (epoch + 1, i + 1, running_loss / 2000))
             running_loss = 0.0
-            torch.save(net.state_dict(), './cifar_net.pth')
-            print("saved")
+#            torch.save(net.state_dict(), './cifar_net.pth')
+#            print("saved")
 
 print('Finished Training')
 torch.save(net.state_dict(), './cifar_net.pth')
@@ -91,8 +99,8 @@ correct = 0
 total = 0
 with torch.no_grad():
     for data in testloader:
-        images, labels = data
-        outputs = net(images)
+        inputs, labels = data[0].to(device), data[1].to(device)
+        outputs = net(inputs)
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
