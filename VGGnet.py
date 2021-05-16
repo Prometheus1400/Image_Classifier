@@ -4,6 +4,7 @@ import torchvision.transforms as transforms
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import math
 
 
 device = torch.device("cuda:9")
@@ -37,51 +38,59 @@ classes = ('plane', 'car', 'bird', 'cat', 'deer',
 class VGGnet(nn.Module):
     def __init__(self):
         super(VGGnet, self).__init__()
-        self.conv1a = nn.Conv2d(3, 64, 3, padding=1)
-        self.conv1b = nn.Conv2d(64, 64, 3, padding=1)
+        self.relu = nn.ReLU()
+
+        self.conv1a = nn.Conv2d(3, 8, 3, padding=1)
+        self.conv1b = nn.Conv2d(8, 8, 3, padding=1)
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        self.conv2a = nn.Conv2d(64, 128, 3, padding=1)
-        self.conv2b = nn.Conv2d(128, 128, 3, padding=1)
+        self.conv2a = nn.Conv2d(8, 16, 3, padding=1)
+        self.conv2b = nn.Conv2d(16, 16, 3, padding=1)
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        self.conv3a = nn.Conv2d(128, 256, 3, padding=1)
-        self.conv3b = nn.Conv2d(256, 256, 3, padding=1)
+        self.conv3a = nn.Conv2d(16, 32, 3, padding=1)
+        self.conv3b = nn.Conv2d(32, 32, 3, padding=1)
         self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        self.conv4a = nn.Conv2d(256, 512, 3, padding=1)
-        self.conv4b = nn.Conv2d(512, 512, 3, padding=1)
-        self.conv4c = nn.Conv2d(512, 512, 3, padding=1)
+        self.conv4a = nn.Conv2d(32, 64, 3, padding=1)
+        self.conv4b = nn.Conv2d(64, 64, 3, padding=1)
+        self.conv4c = nn.Conv2d(64, 64, 3, padding=1)
         self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2)
 
         self.dropout = nn.Dropout(0.5)
-        self.fc1 = nn.Linear(2048, 2048)
-        self.fc2 = nn.Linear(2048, 100)
-        self.fc3 = nn.Linear(100, 10)
+        self.fc1 = nn.Linear(256, 256)
+        self.fc2 = nn.Linear(256, 10)
+        self.fc3 = nn.Linear(10, 10)
+        # initialize weights
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+                m.bias.data.zero_()
 
     def forward(self, x):
-        x = F.relu(self.conv1a(x))
-        x = F.relu(self.conv1b(x))
+        x = self.relu(self.conv1a(x))
+        x = self.relu(self.conv1b(x))
         x = self.pool1(x)
 
-        x = F.relu(self.conv2a(x))
-        x = F.relu(self.conv2b(x))
+        x = self.relu(self.conv2a(x))
+        x = self.relu(self.conv2b(x))
         x = self.pool2(x)
 
-        x = F.relu(self.conv3a(x))
-        x = F.relu(self.conv3b(x))
+        x = self.relu(self.conv3a(x))
+        x = self.relu(self.conv3b(x))
         x = self.pool3(x)
 
-        x = F.relu(self.conv4a(x))
-        x = F.relu(self.conv4b(x))
-        x = F.relu(self.conv4c(x))
+        x = self.relu(self.conv4a(x))
+        x = self.relu(self.conv4b(x))
+        x = self.relu(self.conv4c(x))
         x = self.pool4(x)
 
         x = x.reshape(x.shape[0], -1)
         x = self.dropout(x)
-        x = F.relu(self.fc1(x))
+        x = self.relu(self.fc1(x))
         x = self.dropout(x)
-        x = F.relu(self.fc2(x))
+        x = self.relu(self.fc2(x))
         # x = self.dropout(x)
         x = self.fc3(x)
         return x
@@ -89,14 +98,14 @@ class VGGnet(nn.Module):
 
 VGGnet = VGGnet()
 VGGnet.to(device)
-# net.load_state_dict(torch.load("./VGGnet.pth"))
+VGGnet.load_state_dict(torch.load("./VGGnet.pth"))
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(VGGnet.parameters(), lr=1e-2, momentum=0.9)
+# optimizer = optim.SGD(VGGnet.parameters(), lr=1e-4, momentum=0.9)
 # lr=0.001, weight_decay=1e-5)
-# optimizer = torch.optim.Adam(VGGnet.parameters(), lr=1e-3, weight_decay=1e-5)
+optimizer = torch.optim.Adam(VGGnet.parameters(), lr=1e-4, weight_decay=1e-5)
 
-for epoch in range(1):  # loop over the dataset multiple times
+for epoch in range(5):  # loop over the dataset multiple times
 
     running_loss = 0.0
     for i, data in enumerate(trainloader, 0):
